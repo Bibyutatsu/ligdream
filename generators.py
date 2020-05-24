@@ -1,18 +1,31 @@
 # Copyright (C) 2019 Computational Science Lab, UPF <http://www.compscience.org/>
 # Copying and distribution is allowed under AGPLv3 license
 
+from moleculekit.smallmol.smallmol import SmallMol
+from moleculekit.tools.voxeldescriptors import _getOccupancyC
+from moleculekit.util import uniformRandomRotation
+from htmd2moleculekit import _getChannelRadii
+
 import torch
 import rdkit
 from rdkit import Chem
 from rdkit.Chem import AllChem
-from htmd.molecule.util import uniformRandomRotation
-from htmd.smallmol.smallmol import SmallMol
-from htmd.molecule.voxeldescriptors import _getOccupancyC, _getGridCenters
 
 import numpy as np
 import multiprocessing
 import math
 import random
+
+def _getGridCenters(llc, N, resolution):
+    xrange = [llc[0] + resolution * x for x in range(0, N[0])]
+    yrange = [llc[1] + resolution * x for x in range(0, N[1])]
+    zrange = [llc[2] + resolution * x for x in range(0, N[2])]
+    centers = np.zeros((N[0], N[1], N[2], 3))
+    for i, x in enumerate(xrange):
+        for j, y in enumerate(yrange):
+            for k, z in enumerate(zrange):
+                centers[i, j, k, :] = np.array([x, y, z])
+    return centers
 
 vocab_list = ["pad", "start", "end",
               "C", "c", "N", "n", "S", "s", "P", "O", "o",
@@ -81,12 +94,12 @@ def generate_sigmas(mol):
     Calculates sigmas for elements as well as pharmacophores.
     Returns sigmas, coordinates and center of ligand.
     """
-    coords = mol.getCoords()
+    coords = mol._coords[: , : , 0]
     n_atoms = len(coords)
     lig_center = mol.getCenter()
 
     # Calculate all the channels
-    multisigmas = mol._getChannelRadii()[:, [0, 1, 2, 3, 7]]
+    multisigmas = _getChannelRadii(mol)[:, [0, 1, 2, 3, 7]]
 
     aromatic_groups = get_aromatic_groups(mol._mol)
     aromatics = [coords[np.array(a_group)].mean(axis=0) for a_group in aromatic_groups]

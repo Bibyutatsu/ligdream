@@ -104,9 +104,6 @@ class CompoundGenerator:
         shape_input = shape_input.unsqueeze(0).repeat(n_attemps, 1, 1, 1, 1)
         cond_input = cond_input.unsqueeze(0).repeat(n_attemps, 1, 1, 1, 1)
 
-        shape_input = Variable(shape_input, volatile=True)
-        cond_input = Variable(cond_input, volatile=True)
-
         recoded_shapes, _, _ = self.vae_model(shape_input, cond_input, lam_fact)
         smiles = self.caption_shape(recoded_shapes, probab=probab)
         if filter_unique_valid:
